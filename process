@@ -1,0 +1,56 @@
+#!/bin/bash
+
+
+currentDir=`pwd`
+refFasta=${currentDir}/workdata/casc/aln/ncbi-ref-genome.fasta
+adapterSeq=${currentDir}/Trimmomatic-0.36/adapters/TruSeq3-PE.fa
+trimmomaticjar=${currentDir}/Trimmomatic-0.36/trimmomatic-0.36.jar
+
+# echo "########################### trimming start ###############################"
+# java -jar $trimmomaticjar PE -threads 8 -phred33 ${currentDir}/workdata/casc/CASC_TATCAGCA_L007_R1_001.fastq.gz ${currentDir}/workdata/casc/CASC_TATCAGCA_L007_R2_001.fastq.gz ${currentDir}/workdata/casc/CASC_R1.fastq.gz ${currentDir}/workdata/casc/bak1 ${currentDir}/workdata/casc/CASC_R2.fastq.gz ${currentDir}/workdata/casc/bak2 ILLUMINACLIP:$adapterSeq:2:30:12:1 LEADING:20 TRAILING:20 HEADCROP:10 SLIDINGWINDOW:4:20 MINLEN:80
+#
+# if [ $? != 0 ]; then
+#     echo "trimming went wrong"
+#     return
+# fi
+#
+#
+# # run abyss-pe
+# echo "########################### assembly start ###############################"
+# abyss-pe -C ${currentDir}/workdata/casc/contigs name=casc k=48 v=-v in="${currentDir}/workdata/casc/CASC_R1.fastq.gz ${currentDir}/workdata/casc/CASC_R2.fastq.gz" contigs 2>&1 | tee ${currentDir}/workdata/casc/contigs/abyss.log
+#
+# # Exit if exit code is not zero
+# if [ $? != 0 ]; then
+#     echo "assembly went wrong"
+#     return
+# fi
+#
+
+# index ref genome
+# bwa index $refFasta
+
+#alighn reads
+# echo "########################### reads alignment start ###############################"
+
+# bwa mem -R '@RG\tID:HWI-ST765\tSM:TATCAGCA\tLB:None\tPL:Illumina' $refFasta ${currentDir}/workdata/casc/CASC_R1.fastq.gz ${currentDir}/workdata/casc/CASC_R2.fastq.gz > ${currentDir}/workdata/casc/aln/casc-reads.sam
+
+# samtools view -bh ${currentDir}/workdata/casc/aln/casc-reads.sam | samtools sort -n - | samtools fixmate -m - ${currentDir}/workdata/casc/aln/casc-reads.fix.bam &&
+# samtools sort ${currentDir}/workdata/casc/aln/casc-reads.fix.bam | samtools markdup -r - ${currentDir}/workdata/casc/aln/casc-reads.sorted.bam &&
+# samtools index ${currentDir}/workdata/casc/aln/casc-reads.sorted.bam
+
+# variant call
+echo "########################### variance call start ###############################"
+
+bcftools mpileup -Ou -f $refFasta ${currentDir}/workdata/casc/aln/casc-reads.sorted.bam | bcftools call -vmO z -o ${currentDir}/workdata/casc/aln/casc-variance.vcf.gz &&
+tabix -p vcf ${currentDir}/workdata/casc/aln/casc-variance.vcf.gz &&
+bcftools filter -e '%QUAL<30' -g5 -G10 -o ${currentDir}/workdata/casc/aln/casc-filterted-variance.vcf.gz ${currentDir}/workdata/casc/aln/casc-variance.vcf.gz &&
+bcftools stats -F $refFasta ${currentDir}/workdata/casc/aln/casc-filterted-variance.vcf.gz > ${currentDir}/workdata/casc/aln/casc-filtered-variance.stats &&
+bcftools stats -F $refFasta ${currentDir}/workdata/casc/aln/casc-variance.vcf.gz > ${currentDir}/workdata/casc/aln/casc-nofilter-variance.stats &&
+plot-vcfstats -P -r -p ${currentDir}/workdata/casc/aln/plots-filter/  ${currentDir}/workdata/casc/aln/casc-filtered-variance.stats &&
+plot-vcfstats -P -r -p ${currentDir}/workdata/casc/aln/plots-nofilter/ ${currentDir}/workdata/casc/aln/casc-nofilter-variance.stats
+
+# Exit if exit code is not zero
+if [ $? != 0 ]; then
+    echo "reads alignment went wrong"
+    return
+fi
