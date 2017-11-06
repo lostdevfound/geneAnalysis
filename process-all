@@ -4,10 +4,9 @@ currentDir=`pwd`
 refFasta=${currentDir}/genome-ref/chloroplast-reference-genome.fasta
 adapterSeq=${currentDir}/Trimmomatic-0.36/adapters/TruSeq3-PE.fa
 trimmomaticjar=${currentDir}/Trimmomatic-0.36/trimmomatic-0.36.jar
-workdata=`ls ${currentDir}/workdata/`
 
-# workdata=( "casc" )
-workdata=( "casc" "cent" "colb" "fugg" "gold" "mtho" "nugg" "sora" "wila" )
+workdata=( "casc" )
+# workdata=( "casc" "cent" "colb" "fugg" "gold" "mtho" "nugg" "sora" "wila" )
 
 # index ref genome
 bwa index $refFasta
@@ -63,6 +62,14 @@ do
                              ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam | vcffilter -f "QUAL > 20" >  ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf &&
 
     rtg vcfstats ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf > ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.stats
+
+    echo "########################### consensus sequence start: ${dirName} ###############################"
+    ## compress
+    bgzip -c ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf >                                                                 ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz &&
+    ## index
+    bcftools index ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz &&
+    ## create consensus
+    bcftools consensus -s sample1 -f ${refFasta} ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz > ${currentDir}/workdata/${dirName}/aln/${dirName}-consensus.fa
 
     # bcftools mpileup -Ou -f $refFasta ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam | bcftools call -vmO z -o ${currentDir}/workdata/${dirName}/aln/${dirName}-variance.vcf.gz &&
     # tabix -p vcf ${currentDir}/workdata/${dirName}/aln/${dirName}-variance.vcf.gz &&
