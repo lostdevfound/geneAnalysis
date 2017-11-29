@@ -24,14 +24,6 @@ do
     # fi
 
 
-    # echo "########################### assembly start: ${dirName} ###############################"
-    # abyss-pe -C ${currentDir}/workdata/$dirName/contigs name=$dirName k=48 v=-v in="${currentDir}/workdata/$dirName/${seqPref}_R1.fastq.gz ${currentDir}/workdata/$dirName/${seqPref}_R2.fastq.gz" contigs 2>&1 | tee ${currentDir}/workdata/$dirName/contigs/abyss.log
-    #
-    # if [ $? != 0 ]; then
-    #     echo "assembly went wrong: ${dirName}"
-    #     exit 1
-    # fi
-
 
     echo "########################### reads alignment start: ${dirName} ###############################"
 
@@ -46,7 +38,7 @@ do
     echo "########################### sam processing start: ${dirName} ###############################"
 
     samtools view -F 4 -bh ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sam | samtools sort -n - | samtools fixmate -m - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam &&
-    samtools sort ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam | samtools markdup -r - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam &&
+    samtools sort ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam | samtools markdup - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam &&
     samtools index ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam
 
 
@@ -57,20 +49,26 @@ do
                              --min-alternate-count 1 \
                              --min-alternate-fraction 0 \
                              --pooled-continuous \
-                             --min-base-quality 20 \
-                             --min-mapping-quality 20 \
-                             ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam | vcffilter -f "QUAL > 20" >  ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf &&
+                             --min-base-quality 9 \
+                             --min-mapping-quality 6 \
+                             ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam | vcffilter -f "QUAL > 15" >  ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf &&
 
-    rtg vcfstats ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf > ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.stats
+    rtg vcfstats ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf > ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.stats
 
     echo "########################### consensus sequence start: ${dirName} ###############################"
     ## compress
-    bgzip -c ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf >                                                                 ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz &&
+    bgzip -c ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf >                                                                ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf.gz &&
     ## index
-    bcftools index ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz &&
+    bcftools index ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf.gz &&
     ## create consensus
-    bcftools consensus -s sample1 -f ${refFasta} ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance.vcf.gz > ${currentDir}/workdata/${dirName}/aln/${dirName}-consensus.fa
+    bcftools consensus -s sample1 -f ${refFasta} ${currentDir}/workdata/${dirName}/aln/${dirName}-freebayes-filtered-variance-v02.vcf.gz > ${currentDir}/workdata/${dirName}/aln/${dirName}-consensus.fa
 
+    if [ $? != 0 ]; then
+        echo "variance call went wrong: ${dirName}"
+        exit 1
+    fi
+
+    # Old workflow with bcftools
     # bcftools mpileup -Ou -f $refFasta ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam | bcftools call -vmO z -o ${currentDir}/workdata/${dirName}/aln/${dirName}-variance.vcf.gz &&
     # tabix -p vcf ${currentDir}/workdata/${dirName}/aln/${dirName}-variance.vcf.gz &&
     # bcftools filter -e '%QUAL<20' -g5 -G10 -o ${currentDir}/workdata/${dirName}/aln/${dirName}-filterted-variance.vcf.gz ${currentDir}/workdata/${dirName}/aln/${dirName}-variance.vcf.gz &&
@@ -79,8 +77,4 @@ do
     # plot-vcfstats -P -r -p ${currentDir}/workdata/${dirName}/aln/plots-filter/  ${currentDir}/workdata/${dirName}/aln/${dirName}-filtered-variance.stats &&
     # plot-vcfstats -P -r -p ${currentDir}/workdata/${dirName}/aln/plots-nofilter/ ${currentDir}/workdata/${dirName}/aln/${dirName}-nofilter-variance.stats
 
-    if [ $? != 0 ]; then
-        echo "variance call went wrong: ${dirName}"
-        exit 1
-    fi
 done
