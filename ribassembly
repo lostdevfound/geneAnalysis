@@ -26,25 +26,25 @@ do
 
     rm  ribo-${dirName}-scaf.fix.bam
 
-    # echo "########################### variance call start: ${dirName} ###############################"
-    #
-    # bcftools  mpileup -f ${refFasta} ribo-${dirName}-scaf.sorted.bam | bcftools call -mv > ribo-${dirName}-scaf.vcf
-    #
-    # echo "########################### consensus sequence start: ${dirName} ###############################"
-    # ## compress
-    # bgzip -c ribo-${dirName}-scaf.vcf > ribo-${dirName}-scaf.vcf.gz &&
-    # ## index
-    # bcftools index ribo-${dirName}-scaf.vcf.gz &&
-    # ## create consensus
-    # bcftools consensus -s sample1 -f ${refFasta} ribo-${dirName}-scaf.vcf.gz > ribo-${dirName}-consensus.fa
-    #
-    # ## generate a report about the contigs
-    # python3.5 $quast -R $refFasta -o soapQuastReport ${dirName}.contig
-    #
-    # if [ $? != 0 ]; then
-    #     echo "variance call went wrong: ${dirName}"
-    #     exit 1
-    # fi
+    echo "########################### variance call start: ${dirName} ###############################"
+    # This method proved to be error prone if bam file is not inspected for false hits
+    bcftools  mpileup -f ${refFasta} ribo-${dirName}-scaf.sorted.bam | bcftools call -mv > ribo-${dirName}-scaf.vcf
+
+    echo "########################### consensus sequence start: ${dirName} ###############################"
+    ## compress
+    bgzip -c ribo-${dirName}-scaf.vcf > ribo-${dirName}-scaf.vcf.gz &&
+    ## index
+    bcftools index ribo-${dirName}-scaf.vcf.gz &&
+    ## create consensus
+    bcftools consensus -s sample1 -f ${refFasta} ribo-${dirName}-scaf.vcf.gz > ribo-${dirName}-consensus.fa
+
+    ## generate a report about the contigs
+    python3.5 $quast -R $refFasta -o soapQuastReport ${dirName}.contig
+
+    if [ $? != 0 ]; then
+        echo "variance call went wrong: ${dirName}"
+        exit 1
+    fi
 
     cd $currentDir
 done
