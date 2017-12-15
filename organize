@@ -11,9 +11,10 @@ dirList=`ls ${currentDir}/workdata/`
 # create dirs for assembly and soft link to the ref genome
 for dirName in $dirList
 	do
-		mkdir workdata/${dirName}/contigs/novoplasty
-		mkdir workdata/${dirName}/contigs/soap
-		cp seed.fasta workdata/${dirName}/contigs/novoplasty/seed.fasta
+		mkdir workdata/${dirName}/rib-aln
+		# mkdir workdata/${dirName}/contigs/novoplasty
+		# mkdir workdata/${dirName}/contigs/soap
+		# cp seed.fasta workdata/${dirName}/contigs/novoplasty/seed.fasta
 		# mkdir workdata/${dirName}/aln
 		# ln -s ${currentDir}/ncbi-ref-genome.fa workdata/${dirName}/aln
 	done
