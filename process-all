@@ -5,8 +5,8 @@ refFasta=${currentDir}/genome-ref/chloroplast-reference-genome.fasta
 adapterSeq=${currentDir}/Trimmomatic-0.36/adapters/TruSeq3-PE.fa
 trimmomaticjar=${currentDir}/Trimmomatic-0.36/trimmomatic-0.36.jar
 
-# workdata=( "casc" )
-workdata=( "casc" "cent" "colb" "fugg" "gold" "mtho" "nugg" "sora" "wila" )
+workdata=( "casc" )
+# workdata=( "casc" "cent" "colb" "fugg" "gold" "mtho" "nugg" "sora" "wila" )
 
 # index ref genome
 bwa index $refFasta
@@ -24,22 +24,22 @@ do
     # fi
 
 
-
-    echo "########################### reads alignment start: ${dirName} ###############################"
-
-    bwa mem -R '@RG\tID:HWI-ST765\tSM:sample1\tLB:None\tPL:Illumina' $refFasta ${currentDir}/workdata/${dirName}/${seqPref}_R1.fastq.gz ${currentDir}/workdata/${dirName}/${seqPref}_R2.fastq.gz > ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sam
-
-    if [ $? != 0 ]; then
-        echo "reads alignment went wrong: ${dirName}"
-        exit 1
-    fi
-
-
-    echo "########################### sam processing start: ${dirName} ###############################"
-
-    samtools view -F 4 -bh ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sam | samtools sort -n - | samtools fixmate -m - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam &&
-    samtools sort ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam | samtools markdup - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam &&
-    samtools index ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam
+    #
+    # echo "########################### reads alignment start: ${dirName} ###############################"
+    #
+    # bwa mem -R '@RG\tID:HWI-ST765\tSM:sample1\tLB:None\tPL:Illumina' $refFasta ${currentDir}/workdata/${dirName}/${seqPref}_R1.fastq.gz ${currentDir}/workdata/${dirName}/${seqPref}_R2.fastq.gz > ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sam
+    #
+    # if [ $? != 0 ]; then
+    #     echo "reads alignment went wrong: ${dirName}"
+    #     exit 1
+    # fi
+    #
+    #
+    # echo "########################### sam processing start: ${dirName} ###############################"
+    #
+    # samtools view -F 4 -bh ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sam | samtools sort -n - | samtools fixmate -m - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam &&
+    # samtools sort ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.fix.bam | samtools markdup - ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam &&
+    # samtools index ${currentDir}/workdata/${dirName}/aln/${dirName}-reads.sorted.bam
 
 
     echo "########################### variance call start: ${dirName} ###############################"
